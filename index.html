@@ -1,23 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <title>GPT Bird</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
+        /* CSS Styles */
+
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #87CEEB;
-            /* Sky blue */
+            background-color: #87CEEB; /* Sky blue */
         }
 
         canvas {
             display: block;
             margin: 0 auto;
-            background-color: #87CEEB;
-            /* Sky blue to match the body */
+            background-color: #87CEEB; /* Match the body background */
         }
 
         .screen {
@@ -32,11 +31,18 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            text-align: center;
         }
 
         .screen h1 {
             font-size: 48px;
             margin-bottom: 20px;
+        }
+
+        .screen p {
+            font-size: 24px;
+            margin-bottom: 20px;
+            padding: 0 20px;
         }
 
         .screen button {
@@ -45,31 +51,43 @@
             cursor: pointer;
         }
 
-        #startScreen,
-        #gameOverScreen {
+        /* Display the intro screen by default */
+        #introScreen, #startScreen, #gameOverScreen {
             display: flex;
         }
     </style>
 </head>
-
 <body>
     <canvas id="gameCanvas"></canvas>
+
+    <!-- Intro Screen -->
+    <div id="introScreen" class="screen">
+        <h1>GPT Bird</h1>
+        <p>Press the <strong>Spacebar</strong> on your computer or <strong>tap the screen</strong> on your phone to make the bird flap.</p>
+        <button id="continueButton">Continue</button>
+    </div>
+
+    <!-- Start Screen -->
     <div id="startScreen" class="screen">
         <h1>GPT Bird</h1>
         <button id="startButton">Start Game</button>
     </div>
+
+    <!-- Game Over Screen -->
     <div id="gameOverScreen" class="screen">
         <h1>Game Over</h1>
         <p id="finalScore"></p>
         <button id="restartButton">Restart</button>
     </div>
+
     <script>
+        // JavaScript Code
+
         // Game settings
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         let width, height;
         let frames = 0;
-        const DEGREE = Math.PI / 180;
 
         // Responsive canvas
         function resize() {
@@ -92,38 +110,33 @@
         pipeSouthImg.src = 'pipe.png'; // Replace with your bottom pipe image
 
         const backgroundImg = new Image();
-        backgroundImg.src = 'trees3.png'; // Replace with your background image
+        backgroundImg.src = 'sky.png'; // Replace with your background image
 
         // Load sounds
-        const flySound = new Audio();
-        flySound.src = 'jump_sound.mp3'; // Replace with your jump sound
-
-        const scoreSound = new Audio();
-        scoreSound.src = 'jump_sound.mp3'; // Replace with your score sound
-
-        const music = new Audio();
-        music.src = 'music.wav'; // Replace with your background music
+        const flySound = new Audio('jump_sound.mp3'); // Replace with your jump sound
+        const scoreSound = new Audio('jump_sound.mp3'); // Replace with your score sound
+        const music = new Audio('music.wav'); // Replace with your background music
         music.loop = true;
 
         // Game variables
         let pipes = [];
         let score = 0;
         let gameSpeed = 2;
-        let pipeGap = 150;
+        let pipeGap = 180; // Adjusted gap for easier gameplay
 
         // Bird object
         const bird = {
             x: 50,
             y: height / 2,
-            width: 68,
-            height: 52,
+            width: 34,
+            height: 26,
             gravity: 0.25,
-            lift: -4.6,
+            lift: -6, // Adjusted for smoother control
             velocity: 0,
-            draw: function () {
+            draw: function() {
                 ctx.drawImage(birdImg, this.x, this.y, this.width, this.height);
             },
-            update: function () {
+            update: function() {
                 this.velocity += this.gravity;
                 this.y += this.velocity;
 
@@ -131,7 +144,7 @@
                     gameOver();
                 }
             },
-            flap: function () {
+            flap: function() {
                 this.velocity = this.lift;
                 flySound.play();
             }
@@ -143,11 +156,11 @@
             this.bottom = height - (this.top + pipeGap);
             this.x = width;
             this.width = 52;
-            this.draw = function () {
+            this.draw = function() {
                 ctx.drawImage(pipeNorthImg, this.x, 0, this.width, this.top);
                 ctx.drawImage(pipeSouthImg, this.x, height - this.bottom, this.width, this.bottom);
             };
-            this.update = function () {
+            this.update = function() {
                 this.x -= gameSpeed;
                 if (this.x + this.width < 0) {
                     pipes.shift();
@@ -156,9 +169,9 @@
                 }
                 // Collision detection
                 if (
-                    (bird.x < this.x + this.width &&
-                        bird.x + bird.width > this.x &&
-                        (bird.y < this.top || bird.y + bird.height > height - this.bottom))
+                    bird.x < this.x + this.width &&
+                    bird.x + bird.width > this.x &&
+                    (bird.y < this.top || bird.y + bird.height > height - this.bottom)
                 ) {
                     gameOver();
                 }
@@ -169,14 +182,26 @@
         let gameInterval;
         let isPlaying = false;
 
-        // Start screen elements
+        // Screen elements
+        const introScreen = document.getElementById('introScreen');
+        const continueButton = document.getElementById('continueButton');
         const startScreen = document.getElementById('startScreen');
         const startButton = document.getElementById('startButton');
-
-        // Game over screen elements
         const gameOverScreen = document.getElementById('gameOverScreen');
         const finalScore = document.getElementById('finalScore');
         const restartButton = document.getElementById('restartButton');
+
+        // Intro screen
+        function showIntro() {
+            introScreen.style.display = 'flex';
+            startScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+        }
+
+        function hideIntro() {
+            introScreen.style.display = 'none';
+            startScreen.style.display = 'flex';
+        }
 
         // Start the game
         function startGame() {
@@ -188,6 +213,7 @@
             bird.y = height / 2;
             bird.velocity = 0;
             frames = 0;
+            music.currentTime = 0;
             music.play();
             gameInterval = requestAnimationFrame(gameLoop);
         }
@@ -196,7 +222,6 @@
         function gameOver() {
             isPlaying = false;
             music.pause();
-            music.currentTime = 0;
             gameOverScreen.style.display = 'flex';
             finalScore.textContent = `Score: ${score}`;
             cancelAnimationFrame(gameInterval);
@@ -234,17 +259,20 @@
         }
 
         // Event listeners
-        document.addEventListener('keydown', function (e) {
+        document.addEventListener('keydown', function(e) {
             if (e.code === 'Space') {
                 bird.flap();
             }
         });
-        canvas.addEventListener('click', function () {
+        canvas.addEventListener('click', function() {
             bird.flap();
         });
+        continueButton.addEventListener('click', hideIntro);
         startButton.addEventListener('click', startGame);
         restartButton.addEventListener('click', startGame);
+
+        // Show intro screen on page load
+        window.onload = showIntro;
     </script>
 </body>
-
 </html>
