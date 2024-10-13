@@ -52,7 +52,7 @@
         }
 
         /* Display the intro screen by default */
-        #introScreen, #startScreen, #gameOverScreen {
+        #introScreen {
             display: flex;
         }
     </style>
@@ -86,52 +86,75 @@
         // Game settings
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        let width, height;
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
         let frames = 0;
 
-        // Responsive canvas
-        function resize() {
-            width = window.innerWidth;
-            height = window.innerHeight;
-            canvas.width = width;
-            canvas.height = height;
-        }
-        window.addEventListener('resize', resize);
-        resize();
+        // Game variables
+        let pipes = [];
+        let score = 0;
+        let gameSpeed;
+        let pipeGap;
+        let scoreFontSize = height * 0.04; // Initialize font size for score
+        let pipeSpawnInterval; // New variable for controlling pipe spawn timing
 
         // Load images
         const birdImg = new Image();
         birdImg.src = 'bird.png'; // Replace with your bird image
 
         const pipeNorthImg = new Image();
-        pipeNorthImg.src = 'pipe.png'; // Replace with your top pipe image
+        pipeNorthImg.src = 'pipeNorth.png'; // Replace with your top pipe image
 
         const pipeSouthImg = new Image();
-        pipeSouthImg.src = 'pipe.png'; // Replace with your bottom pipe image
+        pipeSouthImg.src = 'pipeSouth.png'; // Replace with your bottom pipe image
 
         const backgroundImg = new Image();
-        backgroundImg.src = 'sky.png'; // Replace with your background image
+        backgroundImg.src = 'background.png'; // Replace with your background image
 
         // Load sounds
-        const flySound = new Audio('jump_sound.mp3'); // Replace with your jump sound
-        const scoreSound = new Audio('jump_sound.mp3'); // Replace with your score sound
+        const flySound = new Audio('fly.mp3'); // Replace with your jump sound
+        const scoreSound = new Audio('score.mp3'); // Replace with your score sound
         const music = new Audio('music.wav'); // Replace with your background music
         music.loop = true;
 
-        // Game variables
-        let pipes = [];
-        let score = 0;
-        let gameSpeed = 2;
-        let pipeGap = 180; // Adjusted gap for easier gameplay
+        // Responsive canvas and game element adjustment
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+
+            // Update bird size and position based on canvas size
+            bird.height = height * 0.1; // Bird height is 7% of canvas height
+            bird.width = bird.height * (34 / 26); // Maintain aspect ratio
+            bird.x = width * 0.1; // Position the bird at 10% of canvas width
+
+            // Update gravity and lift based on canvas size
+            bird.gravity = height * 0.0002; // Reduced gravity for slower fall
+            bird.lift = -height * 0.01; // Adjusted lift
+
+            // Update pipe gap and speed based on canvas size
+            pipeGap = height * 0.45; // Gap is 25% of canvas height
+            gameSpeed = width * 0.0015; // Adjusted speed based on canvas width
+
+            // Adjust font size for score display
+            scoreFontSize = height * 0.04;
+
+            // Update pipe spawn interval
+            pipeSpawnInterval = Math.floor(width / gameSpeed);
+        }
+        window.addEventListener('resize', resize);
 
         // Bird object
         const bird = {
-            x: 50,
+            x: width * 0.1,
             y: height / 2,
-            width: 34,
-            height: 26,
-            gravity: 0.25,
-            lift: -6, // Adjusted for smoother control
+            width: height * 0.07 * (34 / 26), // Initialize width
+            height: height * 0.07, // Initialize height
+            gravity: height * 0.0002, // Adjusted gravity
+            lift: -height * 0.015,    // Adjusted lift
             velocity: 0,
             draw: function() {
                 ctx.drawImage(birdImg, this.x, this.y, this.width, this.height);
@@ -150,12 +173,15 @@
             }
         };
 
+        // Initialize game elements
+        resize();
+
         // Pipe object
         function Pipe() {
             this.top = Math.random() * (height / 2);
             this.bottom = height - (this.top + pipeGap);
             this.x = width;
-            this.width = 52;
+            this.width = bird.width * 1.5; // Pipes are 1.5 times the bird's width
             this.draw = function() {
                 ctx.drawImage(pipeNorthImg, this.x, 0, this.width, this.top);
                 ctx.drawImage(pipeSouthImg, this.x, height - this.bottom, this.width, this.bottom);
@@ -236,7 +262,7 @@
             ctx.drawImage(backgroundImg, 0, 0, width, height);
 
             // Draw and update pipes
-            if (frames % 150 === 0) {
+            if (frames % pipeSpawnInterval === 0) {
                 pipes.push(new Pipe());
             }
             for (let i = 0; i < pipes.length; i++) {
@@ -250,7 +276,7 @@
 
             // Draw score
             ctx.fillStyle = '#FFF';
-            ctx.font = '24px Arial';
+            ctx.font = `${scoreFontSize}px Arial`;
             ctx.fillText(`Score: ${score}`, 10, 30);
 
             if (isPlaying) {
