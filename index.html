@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>GPT Bird</title>
@@ -10,13 +11,15 @@
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #87CEEB; /* Sky blue */
+            background-color: #87CEEB;
+            /* Sky blue */
         }
 
         canvas {
             display: block;
             margin: 0 auto;
-            background-color: #87CEEB; /* Match the body background */
+            background-color: #87CEEB;
+            /* Match the body background */
         }
 
         .screen {
@@ -57,13 +60,15 @@
         }
     </style>
 </head>
+
 <body>
     <canvas id="gameCanvas"></canvas>
 
     <!-- Intro Screen -->
     <div id="introScreen" class="screen">
         <h1>GPT Bird</h1>
-        <p>Press the <strong>Spacebar</strong> on your computer or <strong>tap the screen</strong> on your phone to make the bird flap.</p>
+        <p>Press the <strong>Spacebar</strong> on your computer or <strong>tap the screen</strong> on your phone to make
+            the bird flap.</p>
         <button id="continueButton">Continue</button>
     </div>
 
@@ -82,6 +87,7 @@
 
     <script>
         // JavaScript Code
+        let debugMode = true;
 
         // Game settings
         const canvas = document.getElementById('gameCanvas');
@@ -137,7 +143,7 @@
 
             // Update pipe gap and speed based on canvas size
             pipeGap = height * 0.45; // Gap is 25% of canvas height
-            gameSpeed = width * 0.0045; // Adjusted speed based on canvas width
+            gameSpeed = width * 0.0025; // Adjusted speed based on canvas width
 
             // Adjust font size for score display
             scoreFontSize = height * 0.04;
@@ -156,10 +162,10 @@
             gravity: height * 0.0002, // Adjusted gravity
             lift: -height * 0.015,    // Adjusted lift
             velocity: 0,
-            draw: function() {
+            draw: function () {
                 ctx.drawImage(birdImg, this.x, this.y, this.width, this.height);
             },
-            update: function() {
+            update: function () {
                 this.velocity += this.gravity;
                 this.y += this.velocity;
 
@@ -167,7 +173,7 @@
                     gameOver();
                 }
             },
-            flap: function() {
+            flap: function () {
                 this.velocity = this.lift;
                 flySound.play();
             }
@@ -176,33 +182,74 @@
         // Initialize game elements
         resize();
 
+        // Detect circular collision area on bird 
+        function circleRectCollision(circle, rect) {
+            const distX = Math.abs(circle.x - rect.x - rect.width / 2);
+            const distY = Math.abs(circle.y - rect.y - rect.height / 2);
+
+            if (distX > (rect.width / 2 + circle.radius)) { return false; }
+            if (distY > (rect.height / 2 + circle.radius)) { return false; }
+
+            if (distX <= (rect.width / 2)) { return true; }
+            if (distY <= (rect.height / 2)) { return true; }
+
+            const dx = distX - rect.width / 2;
+            const dy = distY - rect.height / 2;
+            return (dx * dx + dy * dy <= (circle.radius * circle.radius));
+        }
+
         // Pipe object
         function Pipe() {
             this.top = Math.random() * (height / 2);
             this.bottom = height - (this.top + pipeGap);
             this.x = width;
             this.width = bird.width * 1.5; // Pipes are 1.5 times the bird's width
-            this.draw = function() {
+            this.draw = function () {
                 ctx.drawImage(pipeNorthImg, this.x, 0, this.width, this.top);
                 ctx.drawImage(pipeSouthImg, this.x, height - this.bottom, this.width, this.bottom);
             };
-            this.update = function() {
+            this.update = function () {
                 this.x -= gameSpeed;
                 if (this.x + this.width < 0) {
                     pipes.shift();
                     score++;
                     scoreSound.play();
                 }
+
+                // Define the bird's circle hitbox
+                const birdCircle = {
+                    x: bird.x + bird.width / 2,
+                    y: bird.y + bird.height / 2,
+                    radius: (bird.width + bird.height) / 4 * 0.2 // Adjust multiplier for sensitivity
+                };
+
+                // Define the top pipe's rectangle
+                const topPipeRect = {
+                    x: this.x,
+                    y: 0,
+                    width: this.width,
+                    height: this.top
+                };
+
+                // Define the bottom pipe's rectangle
+                const bottomPipeRect = {
+                    x: this.x,
+                    y: height - this.bottom,
+                    width: this.width,
+                    height: this.bottom
+                };
+
                 // Collision detection
                 if (
-                    bird.x < this.x + this.width &&
-                    bird.x + bird.width > this.x &&
-                    (bird.y < this.top || bird.y + bird.height > height - this.bottom)
+                    circleRectCollision(birdCircle, topPipeRect) ||
+                    circleRectCollision(birdCircle, bottomPipeRect)
                 ) {
                     gameOver();
                 }
             };
         }
+
+        
 
         // Game control variables
         let gameInterval;
@@ -255,42 +302,95 @@
 
         // Game loop
         function gameLoop() {
-            frames++;
-            ctx.clearRect(0, 0, width, height);
+    frames++;
+    ctx.clearRect(0, 0, width, height);
 
-            // Draw background
-            ctx.drawImage(backgroundImg, 0, 0, width, height);
+    // Draw background
+    ctx.drawImage(backgroundImg, 0, 0, width, height);
 
-            // Draw and update pipes
-            if (frames % pipeSpawnInterval === 0) {
-                pipes.push(new Pipe());
-            }
-            for (let i = 0; i < pipes.length; i++) {
-                pipes[i].draw();
-                pipes[i].update();
-            }
+    // Draw and update pipes
+    if (frames % pipeSpawnInterval === 0) {
+        pipes.push(new Pipe());
+    }
+    for (let i = 0; i < pipes.length; i++) {
+        pipes[i].draw();
+        pipes[i].update();
+    }
 
-            // Draw and update bird
-            bird.draw();
-            bird.update();
+    // Draw and update bird
+    bird.draw();
+    bird.update();
 
-            // Draw score
-            ctx.fillStyle = '#FFF';
-            ctx.font = `${scoreFontSize}px Arial`;
-            ctx.fillText(`Score: ${score}`, 10, 30);
+    // Collision detection and debug drawing
+    for (let i = 0; i < pipes.length; i++) {
+        const pipe = pipes[i];
 
-            if (isPlaying) {
-                gameInterval = requestAnimationFrame(gameLoop);
-            }
+        // Define the bird's circle hitbox
+        const birdCircle = {
+            x: bird.x + bird.width / 2,
+            y: bird.y + bird.height / 2,
+            radius: (bird.width + bird.height) / 4 * 0.4 // Adjust multiplier as needed
+        };
+
+        // Define the top pipe's rectangle hitbox
+        const topPipeRect = {
+            x: pipe.x,
+            y: 0,
+            width: pipe.width,
+            height: pipe.top
+        };
+
+        // Define the bottom pipe's rectangle hitbox
+        const bottomPipeRect = {
+            x: pipe.x,
+            y: height - pipe.bottom,
+            width: pipe.width,
+            height: pipe.bottom
+        };
+
+        // Collision detection
+        if (
+            circleRectCollision(birdCircle, topPipeRect) ||
+            circleRectCollision(birdCircle, bottomPipeRect)
+        ) {
+            gameOver();
+            return; // Exit the function to stop the game loop
         }
 
+        // Debugging: Draw hitboxes
+        if (debugMode) {
+            // Draw bird's hitbox
+            ctx.strokeStyle = 'red';
+            ctx.beginPath();
+            ctx.arc(birdCircle.x, birdCircle.y, birdCircle.radius, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Draw top pipe's hitbox
+            ctx.strokeStyle = 'blue';
+            ctx.strokeRect(topPipeRect.x, topPipeRect.y, topPipeRect.width, topPipeRect.height);
+
+            // Draw bottom pipe's hitbox
+            ctx.strokeRect(bottomPipeRect.x, bottomPipeRect.y, bottomPipeRect.width, bottomPipeRect.height);
+        }
+    }
+
+    // Draw score
+    ctx.fillStyle = '#FFF';
+    ctx.font = `${scoreFontSize}px Arial`;
+    ctx.fillText(`Score: ${score}`, 10, 30);
+
+    if (isPlaying) {
+        gameInterval = requestAnimationFrame(gameLoop);
+    }
+}
+
         // Event listeners
-        document.addEventListener('keydown', function(e) {
+        document.addEventListener('keydown', function (e) {
             if (e.code === 'Space') {
                 bird.flap();
             }
         });
-        canvas.addEventListener('click', function() {
+        canvas.addEventListener('click', function () {
             bird.flap();
         });
         continueButton.addEventListener('click', hideIntro);
@@ -301,4 +401,5 @@
         window.onload = showIntro;
     </script>
 </body>
+
 </html>
