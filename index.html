@@ -8,6 +8,28 @@
     <style>
         /* CSS Styles */
 
+        /* Animated background */
+
+        /* Animated Background */
+        #startScreen {
+            background-image: url('background.png');
+            /* Use your game background */
+            background-size: cover;
+            background-position: center;
+            animation: backgroundMove 10s linear infinite;
+        }
+
+        @keyframes backgroundMove {
+            from {
+                background-position: 0 0;
+            }
+
+            to {
+                background-position: -500px 0;
+                /* Adjust as needed */
+            }
+        }
+
         body {
             margin: 0;
             overflow: hidden;
@@ -249,7 +271,7 @@
             };
         }
 
-        
+
 
         // Game control variables
         let gameInterval;
@@ -302,87 +324,87 @@
 
         // Game loop
         function gameLoop() {
-    frames++;
-    ctx.clearRect(0, 0, width, height);
+            frames++;
+            ctx.clearRect(0, 0, width, height);
 
-    // Draw background
-    ctx.drawImage(backgroundImg, 0, 0, width, height);
+            // Draw background
+            ctx.drawImage(backgroundImg, 0, 0, width, height);
 
-    // Draw and update pipes
-    if (frames % pipeSpawnInterval === 0) {
-        pipes.push(new Pipe());
-    }
-    for (let i = 0; i < pipes.length; i++) {
-        pipes[i].draw();
-        pipes[i].update();
-    }
+            // Draw and update pipes
+            if (frames % pipeSpawnInterval === 0) {
+                pipes.push(new Pipe());
+            }
+            for (let i = 0; i < pipes.length; i++) {
+                pipes[i].draw();
+                pipes[i].update();
+            }
 
-    // Draw and update bird
-    bird.draw();
-    bird.update();
+            // Draw and update bird
+            bird.draw();
+            bird.update();
 
-    // Collision detection and debug drawing
-    for (let i = 0; i < pipes.length; i++) {
-        const pipe = pipes[i];
+            // Collision detection and debug drawing
+            for (let i = 0; i < pipes.length; i++) {
+                const pipe = pipes[i];
 
-        // Define the bird's circle hitbox
-        const birdCircle = {
-            x: bird.x + bird.width / 2,
-            y: bird.y + bird.height / 2,
-            radius: (bird.width + bird.height) / 4 * 0.4 // Adjust multiplier as needed
-        };
+                // Define the bird's circle hitbox
+                const birdCircle = {
+                    x: bird.x + bird.width / 2,
+                    y: bird.y + bird.height / 2,
+                    radius: (bird.width + bird.height) / 4 * 0.4 // Adjust multiplier as needed
+                };
 
-        // Define the top pipe's rectangle hitbox
-        const topPipeRect = {
-            x: pipe.x,
-            y: 0,
-            width: pipe.width,
-            height: pipe.top
-        };
+                // Define the top pipe's rectangle hitbox
+                const topPipeRect = {
+                    x: pipe.x,
+                    y: 0,
+                    width: pipe.width,
+                    height: pipe.top
+                };
 
-        // Define the bottom pipe's rectangle hitbox
-        const bottomPipeRect = {
-            x: pipe.x,
-            y: height - pipe.bottom,
-            width: pipe.width,
-            height: pipe.bottom
-        };
+                // Define the bottom pipe's rectangle hitbox
+                const bottomPipeRect = {
+                    x: pipe.x,
+                    y: height - pipe.bottom,
+                    width: pipe.width,
+                    height: pipe.bottom
+                };
 
-        // Collision detection
-        if (
-            circleRectCollision(birdCircle, topPipeRect) ||
-            circleRectCollision(birdCircle, bottomPipeRect)
-        ) {
-            gameOver();
-            return; // Exit the function to stop the game loop
+                // Collision detection
+                if (
+                    circleRectCollision(birdCircle, topPipeRect) ||
+                    circleRectCollision(birdCircle, bottomPipeRect)
+                ) {
+                    gameOver();
+                    return; // Exit the function to stop the game loop
+                }
+
+                // Debugging: Draw hitboxes
+                if (debugMode) {
+                    // Draw bird's hitbox
+                    ctx.strokeStyle = 'red';
+                    ctx.beginPath();
+                    ctx.arc(birdCircle.x, birdCircle.y, birdCircle.radius, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                    // Draw top pipe's hitbox
+                    ctx.strokeStyle = 'blue';
+                    ctx.strokeRect(topPipeRect.x, topPipeRect.y, topPipeRect.width, topPipeRect.height);
+
+                    // Draw bottom pipe's hitbox
+                    ctx.strokeRect(bottomPipeRect.x, bottomPipeRect.y, bottomPipeRect.width, bottomPipeRect.height);
+                }
+            }
+
+            // Draw score
+            ctx.fillStyle = '#FFF';
+            ctx.font = `${scoreFontSize}px Arial`;
+            ctx.fillText(`Score: ${score}`, 10, 30);
+
+            if (isPlaying) {
+                gameInterval = requestAnimationFrame(gameLoop);
+            }
         }
-
-        // Debugging: Draw hitboxes
-        if (debugMode) {
-            // Draw bird's hitbox
-            ctx.strokeStyle = 'red';
-            ctx.beginPath();
-            ctx.arc(birdCircle.x, birdCircle.y, birdCircle.radius, 0, Math.PI * 2);
-            ctx.stroke();
-
-            // Draw top pipe's hitbox
-            ctx.strokeStyle = 'blue';
-            ctx.strokeRect(topPipeRect.x, topPipeRect.y, topPipeRect.width, topPipeRect.height);
-
-            // Draw bottom pipe's hitbox
-            ctx.strokeRect(bottomPipeRect.x, bottomPipeRect.y, bottomPipeRect.width, bottomPipeRect.height);
-        }
-    }
-
-    // Draw score
-    ctx.fillStyle = '#FFF';
-    ctx.font = `${scoreFontSize}px Arial`;
-    ctx.fillText(`Score: ${score}`, 10, 30);
-
-    if (isPlaying) {
-        gameInterval = requestAnimationFrame(gameLoop);
-    }
-}
 
         // Event listeners
         document.addEventListener('keydown', function (e) {
