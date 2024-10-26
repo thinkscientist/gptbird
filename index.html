@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <title>GPT Bird</title>
@@ -8,40 +7,17 @@
     <style>
         /* CSS Styles */
 
-        /* Animated background */
-
-        /* Animated Background */
-        #startScreen {
-            background-image: url('background.png');
-            /* Use your game background */
-            background-size: cover;
-            background-position: center;
-            animation: backgroundMove 10s linear infinite;
-        }
-
-        @keyframes backgroundMove {
-            from {
-                background-position: 0 0;
-            }
-
-            to {
-                background-position: -500px 0;
-                /* Adjust as needed */
-            }
-        }
-
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #87CEEB;
-            /* Sky blue */
+            background-color: #87CEEB; /* Sky blue */
+            font-family: Arial, sans-serif;
         }
 
         canvas {
             display: block;
             margin: 0 auto;
-            background-color: #87CEEB;
-            /* Match the body background */
+            background-color: #87CEEB; /* Match the body background */
         }
 
         .screen {
@@ -60,20 +36,64 @@
         }
 
         .screen h1 {
-            font-size: 48px;
-            margin-bottom: 20px;
+            font-size: 4vw;
+            margin-bottom: 2vh;
         }
 
         .screen p {
-            font-size: 24px;
-            margin-bottom: 20px;
-            padding: 0 20px;
+            font-size: 2.5vw;
+            margin-bottom: 3vh;
+            padding: 0 5vw;
         }
 
+        /* Animated Start Game Button */
         .screen button {
-            padding: 10px 20px;
-            font-size: 24px;
+            padding: 1vh 3vw;
+            font-size: 2.5vw;
             cursor: pointer;
+            border: none;
+            border-radius: 10px;
+            background-color: #FF6347; /* Tomato color */
+            color: white;
+            animation: pulse 2s infinite;
+            transition: transform 0.2s;
+        }
+
+        .screen button:hover {
+            transform: scale(1.05);
+        }
+
+        /* Keyframes for the button pulse animation */
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 99, 71, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 20px 20px rgba(255, 99, 71, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 99, 71, 0);
+            }
+        }
+
+        /* Bird Animation on Start Screen */
+        #startScreen .bird-animation {
+            width: 16px; /* Width of a single frame */
+            height: 16px; /* Height of a single frame */
+            background-image: url('birds8x16.png'); /* Sprite sheet image */
+            background-repeat: no-repeat;
+            animation: fly 2s steps(8) infinite; /* 8 frames in the sprite sheet */
+            margin-bottom: 0px; /* Adjust as needed */
+        }
+
+        /* Keyframes for the bird flapping animation */
+        @keyframes fly {
+            from {
+                background-position: 0 0;
+            }
+            to {
+                background-position: -128px 0; /* 16px * (8 - 1) = -112px */
+            }
         }
 
         /* Display the intro screen by default */
@@ -82,20 +102,20 @@
         }
     </style>
 </head>
-
 <body>
     <canvas id="gameCanvas"></canvas>
 
     <!-- Intro Screen -->
     <div id="introScreen" class="screen">
         <h1>GPT Bird</h1>
-        <p>Press the <strong>Spacebar</strong> on your computer or <strong>tap the screen</strong> on your phone to make
-            the bird flap.</p>
+        <p>Press the <strong>Spacebar</strong> on your computer or <strong>tap the screen</strong> on your phone to make the bird flap.</p>
         <button id="continueButton">Continue</button>
     </div>
 
     <!-- Start Screen -->
     <div id="startScreen" class="screen">
+        <!-- Animated Bird -->
+        <div class="bird-animation"></div>
         <h1>GPT Bird</h1>
         <button id="startButton">Start Game</button>
     </div>
@@ -109,7 +129,9 @@
 
     <script>
         // JavaScript Code
-        let debugMode = true;
+
+        // Debug Mode - Set to true to visualize hitboxes
+        const debugMode = false;
 
         // Game settings
         const canvas = document.getElementById('gameCanvas');
@@ -126,11 +148,11 @@
         let gameSpeed;
         let pipeGap;
         let scoreFontSize = height * 0.04; // Initialize font size for score
-        let pipeSpawnInterval; // New variable for controlling pipe spawn timing
+        let pipeSpawnInterval; // Variable for controlling pipe spawn timing
 
         // Load images
-        const birdImg = new Image();
-        birdImg.src = 'bird.png'; // Replace with your bird image
+        const birdSprite = new Image();
+        birdSprite.src = 'birds8x16.png'; // Use the same sprite sheet for the game
 
         const pipeNorthImg = new Image();
         pipeNorthImg.src = 'pipeNorth.png'; // Replace with your top pipe image
@@ -147,6 +169,14 @@
         const music = new Audio('music.wav'); // Replace with your background music
         music.loop = true;
 
+        // Animation parameters
+        const birdSpriteFrameWidth = 16;   // Width of a single frame
+        const birdSpriteFrameHeight = 16;  // Height of a single frame
+        const birdSpriteFrameCount = 8;    // Number of frames in the sprite sheet
+        let birdCurrentFrame = 0;          // Current frame index
+        let birdFrameTick = 0;             // Frame tick counter
+        const birdFrameTickMax = 5;        // Adjust to control animation speed
+
         // Responsive canvas and game element adjustment
         function resize() {
             width = window.innerWidth;
@@ -155,23 +185,23 @@
             canvas.height = height;
 
             // Update bird size and position based on canvas size
-            bird.height = height * 0.1; // Bird height is 7% of canvas height
-            bird.width = bird.height * (34 / 26); // Maintain aspect ratio
+            bird.height = height * 0.07; // Bird height is 7% of canvas height
+            bird.width = bird.height * (birdSpriteFrameWidth / birdSpriteFrameHeight); // Maintain aspect ratio
             bird.x = width * 0.1; // Position the bird at 10% of canvas width
 
             // Update gravity and lift based on canvas size
-            bird.gravity = height * 0.0002; // Reduced gravity for slower fall
-            bird.lift = -height * 0.01; // Adjusted lift
+            bird.gravity = height * 0.0003; // Reduced gravity for slower fall
+            bird.lift = -height * 0.012;    // Adjusted lift
 
             // Update pipe gap and speed based on canvas size
-            pipeGap = height * 0.45; // Gap is 25% of canvas height
-            gameSpeed = width * 0.0025; // Adjusted speed based on canvas width
+            pipeGap = height * 0.35; // Gap is 25% of canvas height
+            gameSpeed = width * 0.003; // Adjusted speed based on canvas width
 
             // Adjust font size for score display
             scoreFontSize = height * 0.04;
 
-            // Update pipe spawn interval
-            pipeSpawnInterval = Math.floor(width / gameSpeed);
+            // Update pipe spawn interval (controls spacing between pipes)
+            pipeSpawnInterval = Math.floor((width / gameSpeed) * 1.5);
         }
         window.addEventListener('resize', resize);
 
@@ -179,15 +209,36 @@
         const bird = {
             x: width * 0.1,
             y: height / 2,
-            width: height * 0.07 * (34 / 26), // Initialize width
+            width: height * 0.07 * (birdSpriteFrameWidth / birdSpriteFrameHeight), // Initialize width
             height: height * 0.07, // Initialize height
-            gravity: height * 0.0002, // Adjusted gravity
-            lift: -height * 0.015,    // Adjusted lift
+            gravity: height * 0.0003, // Reduced gravity for slower fall
+            lift: -height * 0.012,    // Adjusted lift
             velocity: 0,
-            draw: function () {
-                ctx.drawImage(birdImg, this.x, this.y, this.width, this.height);
+            draw: function() {
+                // Calculate source X position
+                const sourceX = birdCurrentFrame * birdSpriteFrameWidth;
+                const sourceY = 0; // Assuming all frames are in a single row
+
+                ctx.drawImage(
+                    birdSprite,                // Image source
+                    sourceX,                   // Source X
+                    sourceY,                   // Source Y
+                    birdSpriteFrameWidth,      // Source width
+                    birdSpriteFrameHeight,     // Source height
+                    this.x,                    // Destination X
+                    this.y,                    // Destination Y
+                    this.width,                // Destination width
+                    this.height                // Destination height
+                );
+
+                // Update frame tick and current frame
+                birdFrameTick++;
+                if (birdFrameTick >= birdFrameTickMax) {
+                    birdFrameTick = 0;
+                    birdCurrentFrame = (birdCurrentFrame + 1) % birdSpriteFrameCount;
+                }
             },
-            update: function () {
+            update: function() {
                 this.velocity += this.gravity;
                 this.y += this.velocity;
 
@@ -195,7 +246,7 @@
                     gameOver();
                 }
             },
-            flap: function () {
+            flap: function() {
                 this.velocity = this.lift;
                 flySound.play();
             }
@@ -204,7 +255,27 @@
         // Initialize game elements
         resize();
 
-        // Detect circular collision area on bird 
+        // Pipe object
+        function Pipe() {
+            this.top = Math.random() * (height / 2);
+            this.bottom = height - (this.top + pipeGap);
+            this.x = width;
+            this.width = bird.width * 1.5; // Pipes are 1.5 times the bird's width
+            this.draw = function() {
+                ctx.drawImage(pipeNorthImg, this.x, 0, this.width, this.top);
+                ctx.drawImage(pipeSouthImg, this.x, height - this.bottom, this.width, this.bottom);
+            };
+            this.update = function() {
+                this.x -= gameSpeed;
+                if (this.x + this.width < 0) {
+                    pipes.shift();
+                    score++;
+                    scoreSound.play();
+                }
+            };
+        }
+
+        // Collision detection function
         function circleRectCollision(circle, rect) {
             const distX = Math.abs(circle.x - rect.x - rect.width / 2);
             const distY = Math.abs(circle.y - rect.y - rect.height / 2);
@@ -219,59 +290,6 @@
             const dy = distY - rect.height / 2;
             return (dx * dx + dy * dy <= (circle.radius * circle.radius));
         }
-
-        // Pipe object
-        function Pipe() {
-            this.top = Math.random() * (height / 2);
-            this.bottom = height - (this.top + pipeGap);
-            this.x = width;
-            this.width = bird.width * 1.5; // Pipes are 1.5 times the bird's width
-            this.draw = function () {
-                ctx.drawImage(pipeNorthImg, this.x, 0, this.width, this.top);
-                ctx.drawImage(pipeSouthImg, this.x, height - this.bottom, this.width, this.bottom);
-            };
-            this.update = function () {
-                this.x -= gameSpeed;
-                if (this.x + this.width < 0) {
-                    pipes.shift();
-                    score++;
-                    scoreSound.play();
-                }
-
-                // Define the bird's circle hitbox
-                const birdCircle = {
-                    x: bird.x + bird.width / 2,
-                    y: bird.y + bird.height / 2,
-                    radius: (bird.width + bird.height) / 4 * 0.2 // Adjust multiplier for sensitivity
-                };
-
-                // Define the top pipe's rectangle
-                const topPipeRect = {
-                    x: this.x,
-                    y: 0,
-                    width: this.width,
-                    height: this.top
-                };
-
-                // Define the bottom pipe's rectangle
-                const bottomPipeRect = {
-                    x: this.x,
-                    y: height - this.bottom,
-                    width: this.width,
-                    height: this.bottom
-                };
-
-                // Collision detection
-                if (
-                    circleRectCollision(birdCircle, topPipeRect) ||
-                    circleRectCollision(birdCircle, bottomPipeRect)
-                ) {
-                    gameOver();
-                }
-            };
-        }
-
-
 
         // Game control variables
         let gameInterval;
@@ -300,6 +318,14 @@
 
         // Start the game
         function startGame() {
+            // Wait for the bird sprite to load
+            if (!birdSprite.complete) {
+                birdSprite.onload = function() {
+                    startGame();
+                };
+                return;
+            }
+
             isPlaying = true;
             startScreen.style.display = 'none';
             gameOverScreen.style.display = 'none';
@@ -308,6 +334,8 @@
             bird.y = height / 2;
             bird.velocity = 0;
             frames = 0;
+            birdCurrentFrame = 0; // Reset animation frame
+            birdFrameTick = 0;    // Reset frame tick
             music.currentTime = 0;
             music.play();
             gameInterval = requestAnimationFrame(gameLoop);
@@ -335,26 +363,17 @@
                 pipes.push(new Pipe());
             }
             for (let i = 0; i < pipes.length; i++) {
-                pipes[i].draw();
-                pipes[i].update();
-            }
-
-            // Draw and update bird
-            bird.draw();
-            bird.update();
-
-            // Collision detection and debug drawing
-            for (let i = 0; i < pipes.length; i++) {
                 const pipe = pipes[i];
+                pipe.draw();
+                pipe.update();
 
-                // Define the bird's circle hitbox
+                // Collision detection
                 const birdCircle = {
                     x: bird.x + bird.width / 2,
                     y: bird.y + bird.height / 2,
-                    radius: (bird.width + bird.height) / 4 * 0.4 // Adjust multiplier as needed
+                    radius: (bird.width + bird.height) / 4 * 0.7 // Adjust as needed
                 };
 
-                // Define the top pipe's rectangle hitbox
                 const topPipeRect = {
                     x: pipe.x,
                     y: 0,
@@ -362,7 +381,6 @@
                     height: pipe.top
                 };
 
-                // Define the bottom pipe's rectangle hitbox
                 const bottomPipeRect = {
                     x: pipe.x,
                     y: height - pipe.bottom,
@@ -370,7 +388,6 @@
                     height: pipe.bottom
                 };
 
-                // Collision detection
                 if (
                     circleRectCollision(birdCircle, topPipeRect) ||
                     circleRectCollision(birdCircle, bottomPipeRect)
@@ -396,6 +413,10 @@
                 }
             }
 
+            // Draw and update bird
+            bird.draw();
+            bird.update();
+
             // Draw score
             ctx.fillStyle = '#FFF';
             ctx.font = `${scoreFontSize}px Arial`;
@@ -407,12 +428,12 @@
         }
 
         // Event listeners
-        document.addEventListener('keydown', function (e) {
+        document.addEventListener('keydown', function(e) {
             if (e.code === 'Space') {
                 bird.flap();
             }
         });
-        canvas.addEventListener('click', function () {
+        canvas.addEventListener('click', function() {
             bird.flap();
         });
         continueButton.addEventListener('click', hideIntro);
@@ -423,5 +444,4 @@
         window.onload = showIntro;
     </script>
 </body>
-
 </html>
