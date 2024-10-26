@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>GPT Bird</title>
@@ -10,14 +11,16 @@
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #87CEEB; /* Sky blue */
+            background-color: #87CEEB;
+            /* Sky blue */
             font-family: Arial, sans-serif;
         }
 
         canvas {
             display: block;
             margin: 0 auto;
-            background-color: #87CEEB; /* Match the body background */
+            background-color: #87CEEB;
+            /* Match the body background */
         }
 
         .screen {
@@ -53,7 +56,8 @@
             cursor: pointer;
             border: none;
             border-radius: 10px;
-            background-color: #4794ff; /* Tomato color */
+            background-color: #4794ff;
+            /* Tomato color */
             color: white;
             animation: pulse 2s infinite;
             transition: transform 0.2s;
@@ -68,9 +72,11 @@
             0% {
                 box-shadow: 0 0 0 0 rgba(71, 160, 255, 0.7);
             }
+
             70% {
                 box-shadow: 0 0 20px 20px rgba(255, 99, 71, 0);
             }
+
             100% {
                 box-shadow: 0 0 0 0 rgba(255, 99, 71, 0);
             }
@@ -78,11 +84,15 @@
 
         /* Bird Animation on Start Screen */
         #startScreen .bird-animation {
-            width: 16px; /* Width of a single frame */
-            height: 16px; /* Height of a single frame */
-            background-image: url('birds8x16.png'); /* Sprite sheet image */
+            width: 16px;
+            /* Width of a single frame */
+            height: 16px;
+            /* Height of a single frame */
+            background-image: url('birds8x16.png');
+            /* Sprite sheet image */
             background-repeat: no-repeat;
-            animation: fly 2s steps(8) infinite; /* 3 frames in the sprite sheet */
+            animation: fly 2s steps(8) infinite;
+            /* 3 frames in the sprite sheet */
             margin-bottom: 0px;
         }
 
@@ -91,8 +101,10 @@
             from {
                 background-position: 0 0;
             }
+
             to {
-                background-position: -128px 0; /* 6vw * 3 frames */
+                background-position: -128px 0;
+                /* 6vw * 3 frames */
             }
         }
 
@@ -115,18 +127,21 @@
                 width: 8vw;
                 height: 6vw;
                 animation: fly 0.5s steps(3) infinite;
-                background-position: -24vw 0; /* Adjust based on sprite sheet */
+                background-position: -24vw 0;
+                /* Adjust based on sprite sheet */
             }
         }
     </style>
 </head>
+
 <body>
     <canvas id="gameCanvas"></canvas>
 
     <!-- Intro Screen -->
     <div id="introScreen" class="screen">
         <h1>GPT Bird</h1>
-        <p>Press the <strong>Spacebar</strong> on your computer or <strong>tap the screen</strong> on your phone to make the bird flap.</p>
+        <p>Press the <strong>Spacebar</strong> on your computer or <strong>tap the screen</strong> on your phone to make
+            the bird flap.</p>
         <button id="continueButton">Continue</button>
     </div>
 
@@ -150,6 +165,11 @@
 
         // Debug Mode - Set to true to visualize hitboxes
         const debugMode = false;
+
+        //bird animation
+        // Load the bird sprite sheet
+        const birdSprite = new Image();
+        birdSprite.src = 'birds8x16.png'; // Replace with your sprite sheet image
 
         // Game settings
         const canvas = document.getElementById('gameCanvas');
@@ -224,10 +244,10 @@
             gravity: height * 0.0003, // Reduced gravity for slower fall
             lift: -height * 0.012,    // Adjusted lift
             velocity: 0,
-            draw: function() {
+            draw: function () {
                 ctx.drawImage(birdImg, this.x, this.y, this.width, this.height);
             },
-            update: function() {
+            update: function () {
                 this.velocity += this.gravity;
                 this.y += this.velocity;
 
@@ -235,7 +255,7 @@
                     gameOver();
                 }
             },
-            flap: function() {
+            flap: function () {
                 this.velocity = this.lift;
                 flySound.play();
             }
@@ -250,11 +270,11 @@
             this.bottom = height - (this.top + pipeGap);
             this.x = width;
             this.width = bird.width * 1.5; // Pipes are 1.5 times the bird's width
-            this.draw = function() {
+            this.draw = function () {
                 ctx.drawImage(pipeNorthImg, this.x, 0, this.width, this.top);
                 ctx.drawImage(pipeSouthImg, this.x, height - this.bottom, this.width, this.bottom);
             };
-            this.update = function() {
+            this.update = function () {
                 this.x -= gameSpeed;
                 if (this.x + this.width < 0) {
                     pipes.shift();
@@ -414,12 +434,12 @@
         }
 
         // Event listeners
-        document.addEventListener('keydown', function(e) {
+        document.addEventListener('keydown', function (e) {
             if (e.code === 'Space') {
                 bird.flap();
             }
         });
-        canvas.addEventListener('click', function() {
+        canvas.addEventListener('click', function () {
             bird.flap();
         });
         continueButton.addEventListener('click', hideIntro);
@@ -430,4 +450,5 @@
         window.onload = showIntro;
     </script>
 </body>
+
 </html>
